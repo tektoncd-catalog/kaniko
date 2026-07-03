@@ -1,0 +1,4 @@
+repositoryID: kaniko
+owners:
+  - name: tektoncd-catalog
+    email: tekton-dev@googlegroups.com

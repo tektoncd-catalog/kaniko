@@ -1,15 +1,15 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: kaniko
   labels:
-    app.kubernetes.io/version: "0.6"
+    app.kubernetes.io/version: "0.1"
   annotations:
-    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/pipelines.minVersion: "0.43.0"
     tekton.dev/categories: Image Build
     tekton.dev/tags: image-build
     tekton.dev/displayName: "Build and upload container image using Kaniko"
-    tekton.dev/platforms: "linux/amd64"
+    tekton.dev/platforms: "linux/amd64,linux/arm64,linux/ppc64le"
 spec:
   description: >-
     This Task builds a simple Dockerfile with kaniko and pushes to a registry.
@@ -28,8 +28,11 @@ spec:
       type: array
       default: []
     - name: BUILDER_IMAGE
-      description: The image on which builds will run (default is v1.5.1)
-      default: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+      description: The kaniko executor image to use.
+      default: ghcr.io/osscontainertools/kaniko:v1.27.6@sha256:95779f52d460ca70b65a4f4679d4f5163ad6c33edea3303dc8bbff847de5e05c
+    - name: KANIKO_DIR
+      description: Specifies the location of the kaniko binaries.
+      default: /kaniko
   workspaces:
     - name: source
       description: Holds the context and Dockerfile
@@ -47,19 +50,19 @@ spec:
       workingDir: $(workspaces.source.path)
       image: $(params.BUILDER_IMAGE)
       args:
-        - $(params.EXTRA_ARGS)
+        - $(params.EXTRA_ARGS[*])
         - --dockerfile=$(params.DOCKERFILE)
-        - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
+        - --context=$(workspaces.source.path)/$(params.CONTEXT)
         - --destination=$(params.IMAGE)
         - --digest-file=$(results.IMAGE_DIGEST.path)
-      # kaniko assumes it is running as root, which means this example fails on platforms
-      # that default to run containers as random uid (like OpenShift). Adding this securityContext
-      # makes it explicit that it needs to run as root.
+      env:
+        - name: KANIKO_DIR
+          value: $(params.KANIKO_DIR)
       securityContext:
         runAsUser: 0
     - name: write-url
-      image: docker.io/library/bash:5.1.4@sha256:b208215a4655538be652b2769d82e576bc4d0a2bb132144c060efc5be8c3f5d6
+      image: docker.io/library/alpine:3.21@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c
       script: |
         set -e
         image="$(params.IMAGE)"
-        echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
+        printf "%s" "${image}" | tee "$(results.IMAGE_URL.path)"

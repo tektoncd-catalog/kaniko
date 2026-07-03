@@ -1,0 +1,86 @@
+# Generated from task/kaniko/kaniko.yaml — do not edit directly.
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: kaniko
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.43.0"
+    tekton.dev/categories: Image Build
+    tekton.dev/tags: image-build
+    tekton.dev/displayName: Build and upload container image using Kaniko
+    tekton.dev/platforms: linux/amd64,linux/arm64,linux/ppc64le
+spec:
+  description: This StepAction builds a simple Dockerfile with kaniko and pushes to
+    a registry. This StepAction stores the image name and digest as results, allowing
+    Tekton Chains to pick up that an image was built & sign it.
+  params:
+  - name: source-path
+    description: Path to the source code containing the Dockerfile and build context.
+    type: string
+  - name: dockerconfig-path
+    description: Path to a directory containing a docker config.json for registry
+      auth. Empty string means no auth.
+    type: string
+    default: ""
+  - name: IMAGE
+    description: Name (reference) of the image to build.
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build.
+    default: ./Dockerfile
+  - name: CONTEXT
+    description: The build context used by Kaniko.
+    default: ./
+  - name: EXTRA_ARGS
+    type: array
+    default: []
+  - name: BUILDER_IMAGE
+    description: The kaniko executor image to use.
+    default: ghcr.io/osscontainertools/kaniko:v1.27.6@sha256:95779f52d460ca70b65a4f4679d4f5163ad6c33edea3303dc8bbff847de5e05c
+  - name: KANIKO_DIR
+    description: Specifies the location of the kaniko binaries.
+    default: /kaniko
+  image: $(params.BUILDER_IMAGE)
+  env:
+  - name: KANIKO_DIR
+    value: $(params.KANIKO_DIR)
+  - name: SOURCE_PATH
+    value: $(params.source-path)
+  - name: DOCKERCONFIG_PATH
+    value: $(params.dockerconfig-path)
+  - name: IMAGE
+    value: $(params.IMAGE)
+  - name: DOCKERFILE
+    value: $(params.DOCKERFILE)
+  - name: CONTEXT
+    value: $(params.CONTEXT)
+  securityContext:
+    runAsUser: 0
+  results:
+  - name: IMAGE_DIGEST
+    description: Digest of the image just built.
+  - name: IMAGE_URL
+    description: URL of the image just built.
+  script: |
+    #!/busybox/sh
+    set -e
+
+    # Set up docker config if provided
+    if [ -n "${DOCKERCONFIG_PATH}" ]; then
+      mkdir -p /kaniko/.docker
+      cp "${DOCKERCONFIG_PATH}/config.json" /kaniko/.docker/config.json 2>/dev/null || true
+    fi
+
+    # Run kaniko executor
+    ${KANIKO_DIR}/executor \
+      --dockerfile="${DOCKERFILE}" \
+      --context="${SOURCE_PATH}/${CONTEXT}" \
+      --destination="${IMAGE}" \
+      --digest-file="$(step.results.IMAGE_DIGEST.path)" \
+      "$@"
+
+    # Write image URL result
+    printf "%s" "${IMAGE}" > "$(step.results.IMAGE_URL.path)"
+  args:
+  - $(params.EXTRA_ARGS[*])
