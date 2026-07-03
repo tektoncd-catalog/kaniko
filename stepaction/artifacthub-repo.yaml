@@ -1,0 +1,4 @@
+repositoryID: kaniko-stepaction
+owners:
+  - name: tektoncd-catalog
+    email: tekton-dev@googlegroups.com
