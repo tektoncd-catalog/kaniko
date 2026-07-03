@@ -1,0 +1,132 @@
+name: Build
+
+on:
+  pull_request:
+    branches: ['main']
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Verify StepAction is in sync
+        run: |
+          ./hack/generate-stepaction.sh
+          if ! git diff --exit-code stepaction/; then
+            echo "StepAction is out of sync with Task. Run: ./hack/generate-stepaction.sh"
+            exit 1
+          fi
+
+      - name: Validate YAML structure
+        run: |
+          validate() {
+            local f="$1" want_kind="$2" want_api="$3"
+            echo -n "--- Validating ${f} ... "
+            apiVersion=$(yq '.apiVersion' "${f}")
+            kind=$(yq '.kind' "${f}")
+            name=$(yq '.metadata.name' "${f}")
+            if [[ "${apiVersion}" != "${want_api}" ]]; then
+              echo "FAIL: expected apiVersion ${want_api}, got ${apiVersion}"; exit 1
+            fi
+            if [[ "${kind}" != "${want_kind}" ]]; then
+              echo "FAIL: expected kind ${want_kind}, got ${kind}"; exit 1
+            fi
+            if [[ -z "${name}" || "${name}" == "null" ]]; then
+              echo "FAIL: metadata.name is missing"; exit 1
+            fi
+            echo "OK (${kind}/${name})"
+          }
+          validate "task/kaniko/kaniko.yaml" Task tekton.dev/v1
+          validate "stepaction/kaniko/kaniko.yaml" StepAction tekton.dev/v1beta1
+
+  e2e:
+    name: E2E (${{ matrix.pipeline-version }})
+    needs: [lint]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline-version:
+          - v1.12.0  # LTS, EOL 2027-05-04
+          - v1.9.3   # LTS, EOL 2027-01-30
+          - v1.6.2   # LTS, EOL 2026-10-31
+          - v1.3.4   # LTS, EOL 2026-08-04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run e2e tests
+        env:
+          PIPELINE_VERSION: ${{ matrix.pipeline-version }}
+          TIMEOUT: 180s
+        run: ./test/e2e-tests.sh
+
+  e2e-bundle:
+    name: E2E Bundle
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: tektoncd/actions/setup-tektoncd-cli@dd92514472167b361de1c95fd31fc2ef83c282ec # main
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run bundle e2e test
+        env:
+          PIPELINE_VERSION: v1.12.0
+          TIMEOUT: 180s
+        run: ./test/e2e-bundle-test.sh
+
+  ci-summary:
+    name: CI summary
+    needs: [lint, e2e, e2e-bundle]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check CI results
+        run: |
+          results=(
+            "lint=${NEEDS_LINT_RESULT}"
+            "e2e=${NEEDS_E2E_RESULT}"
+            "e2e-bundle=${NEEDS_E2E_BUNDLE_RESULT}"
+          )
+          failed=0
+          for r in "${results[@]}"; do
+            name="${r%%=*}"
+            result="${r#*=}"
+            echo "${name}: ${result}"
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo ""
+            echo "Some CI jobs failed or were cancelled"
+            exit 1
+          fi
+          echo ""
+          echo "All CI checks passed"
+        env:
+          NEEDS_LINT_RESULT: ${{ needs.lint.result }}
+          NEEDS_E2E_RESULT: ${{ needs.e2e.result }}
+          NEEDS_E2E_BUNDLE_RESULT: ${{ needs.e2e-bundle.result }}
