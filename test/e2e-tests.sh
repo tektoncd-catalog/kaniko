@@ -51,53 +51,7 @@ kubectl run registry --image=registry:2 --port=5000
 kubectl wait --for=condition=Ready --timeout=60s pod/registry
 kubectl expose pod registry --port=5000
 
-echo "--- Creating test TaskRun"
-cat <<'EOF' | kubectl apply -f -
-apiVersion: tekton.dev/v1
-kind: TaskRun
-metadata:
-  name: kaniko-e2e-test
-spec:
-  taskRef:
-    name: kaniko
-  timeout: "0h3m0s"
-  workspaces:
-    - name: source
-      emptyDir: {}
-  params:
-    - name: IMAGE
-      value: registry:5000/kaniko-test:e2e
-    - name: EXTRA_ARGS
-      value:
-        - --insecure
-  stepTemplate:
-    volumeMounts:
-      - name: dockerfile
-        mountPath: /workspace/source
-  volumes:
-    - name: dockerfile
-      emptyDir: {}
-  podTemplate:
-    securityContext:
-      runAsUser: 0
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kaniko-test-dockerfile
-data:
-  Dockerfile: |
-    FROM alpine:3.21
-    RUN echo "hello from kaniko e2e test" > /hello.txt
-    CMD ["cat", "/hello.txt"]
-EOF
-
-# Patch the TaskRun to create the Dockerfile in the workspace via an init step
-# Since we can't easily inject files into emptyDir, we use a simpler approach:
-# create a PipelineRun that first creates the Dockerfile, then runs kaniko.
-kubectl delete taskrun kaniko-e2e-test --ignore-not-found 2>/dev/null || true
-
-echo "--- Creating test PipelineRun with source prep"
+echo "--- Creating test PipelineRun"
 cat <<'EOF' | kubectl apply -f -
 apiVersion: tekton.dev/v1
 kind: PipelineRun
