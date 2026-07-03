@@ -145,12 +145,12 @@ set -e
 
 # Set up docker config if provided
 if [ -n "${DOCKERCONFIG_PATH}" ]; then
-  mkdir -p /kaniko/.docker
-  cp "${DOCKERCONFIG_PATH}/config.json" /kaniko/.docker/config.json 2>/dev/null || true
+  mkdir -p "${KANIKO_DIR}/.docker"
+  cp "${DOCKERCONFIG_PATH}/config.json" "${KANIKO_DIR}/.docker/config.json" 2>/dev/null || true
 fi
 
 # Run kaniko executor
-${KANIKO_DIR}/executor \\
+/kaniko/executor \\
   --dockerfile="${DOCKERFILE}" \\
   --context="${SOURCE_PATH}/${CONTEXT}" \\
   --destination="${IMAGE}" \\
