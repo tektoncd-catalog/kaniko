@@ -12,9 +12,7 @@ metadata:
     tekton.dev/platforms: "linux/amd64,linux/arm64,linux/ppc64le"
 spec:
   description: >-
-    This Task builds a simple Dockerfile with kaniko and pushes to a registry.
-    This Task stores the image name and digest as results, allowing Tekton Chains to pick up
-    that an image was built & sign it.
+    This Task builds a simple Dockerfile with kaniko and pushes to a registry. This Task stores the image name and digest as results, allowing Tekton Chains to pick up that an image was built & sign it.
   params:
     - name: IMAGE
       description: Name (reference) of the image to build.
