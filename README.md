@@ -24,7 +24,7 @@ taskRef:
   resolver: bundles
   params:
     - name: bundle
-      value: ghcr.io/tektoncd-catalog/kaniko/bundle:v0.1.0
+      value: ghcr.io/tektoncd-catalog/kaniko/bundle:v1.0.0
     - name: name
       value: kaniko
     - name: kind
