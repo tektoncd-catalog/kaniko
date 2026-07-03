@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: kaniko
   labels:
-    app.kubernetes.io/version: "0.1"
+    app.kubernetes.io/version: "0.1.0"
   annotations:
     tekton.dev/pipelines.minVersion: "0.43.0"
     tekton.dev/categories: Image Build
@@ -31,7 +31,7 @@ spec:
       description: The kaniko executor image to use.
       default: ghcr.io/osscontainertools/kaniko:v1.27.6@sha256:95779f52d460ca70b65a4f4679d4f5163ad6c33edea3303dc8bbff847de5e05c
     - name: KANIKO_DIR
-      description: Specifies the location of the kaniko binaries.
+      description: Specifies the kaniko working directory (used for buildcontext, stages, layers, caches, and docker config).
       default: /kaniko
   workspaces:
     - name: source

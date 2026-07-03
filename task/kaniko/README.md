@@ -21,7 +21,7 @@ was built & sign it.
 | `CONTEXT` | The build context used by Kaniko. | `./` |
 | `EXTRA_ARGS` | Additional args to pass to the Kaniko executor. | `[]` |
 | `BUILDER_IMAGE` | The Kaniko executor image to use. | `ghcr.io/osscontainertools/kaniko:v1.27.6` |
-| `KANIKO_DIR` | Specifies the location of the kaniko binaries. | `/kaniko` |
+| `KANIKO_DIR` | Kaniko working directory (buildcontext, stages, layers, caches, docker config). | `/kaniko` |
 
 ## Workspaces
 
