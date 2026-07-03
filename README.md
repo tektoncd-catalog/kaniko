@@ -1,7 +1,7 @@
 # Kaniko Task for Tekton
 
-[![Artifact Hub Tasks](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kaniko)](https://artifacthub.io/packages/search?repo=kaniko)
-[![Artifact Hub StepActions](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kaniko-stepaction)](https://artifacthub.io/packages/search?repo=kaniko-stepaction)
+[![Artifact Hub Tasks](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/tekton-kaniko-tasks)](https://artifacthub.io/packages/search?repo=tekton-kaniko-tasks)
+[![Artifact Hub StepActions](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/tekton-kaniko-stepactions)](https://artifacthub.io/packages/search?repo=tekton-kaniko-stepactions)
 
 This repository contains the `kaniko` [Task](task/kaniko/) and [StepAction](stepaction/kaniko/) for [Tekton Pipelines](https://tekton.dev/), providing container image building capabilities using [kaniko](https://github.com/osscontainertools/kaniko).
 
