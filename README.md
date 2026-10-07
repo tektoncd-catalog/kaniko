@@ -2,6 +2,7 @@
 
 [![Artifact Hub Tasks](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/tekton-kaniko-tasks)](https://artifacthub.io/packages/search?repo=tekton-kaniko-tasks)
 [![Artifact Hub StepActions](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/tekton-kaniko-stepactions)](https://artifacthub.io/packages/search?repo=tekton-kaniko-stepactions)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fkaniko.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fkaniko?ref=badge_shield)
 
 This repository contains the `kaniko` [Task](task/kaniko/) and [StepAction](stepaction/kaniko/) for [Tekton Pipelines](https://tekton.dev/), providing container image building capabilities using [kaniko](https://github.com/osscontainertools/kaniko).
 
@@ -56,3 +57,7 @@ spec:
 - **[StepAction reference](stepaction/kaniko/README.md)** — composable step version
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** — architecture, generation, testing, and release process
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — contribution workflow and CI expectations
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fkaniko.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fkaniko?ref=badge_large)
